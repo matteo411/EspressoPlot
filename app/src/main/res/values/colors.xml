@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="temperature_line_color">#AA0000</color>
+    <color name="pressure_line_color">#0000AA</color>
+    <color name="motor_line_color">#006400</color>
+
+    <color name="back_gradient_1">#707070</color>
+    <color name="back_gradient_2">#a0a0a0</color>
+
+    <color name="status_bg_color">#70ffffff</color>
+</resources>
