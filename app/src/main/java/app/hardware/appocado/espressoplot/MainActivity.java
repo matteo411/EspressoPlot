@@ -82,7 +82,7 @@ public class MainActivity extends Activity {
     private static int label_frequency = 10;
     private static int domain_boundary_upper = 200;
 
-    private double mStartTime = 0L;
+    private long mStartTime = 0L;
 
     private Thread timer;
     private TextView shotTimerTextBox;
@@ -105,6 +105,7 @@ public class MainActivity extends Activity {
 
         setContentView(R.layout.activity_main);
 
+        mStartTime = System.currentTimeMillis();
 
         try {
             findBT();
@@ -338,7 +339,8 @@ public class MainActivity extends Activity {
                 .getBondedDevices();
         if (pairedDevices.size() > 0) {
             for (BluetoothDevice device : pairedDevices) {
-                if (device.getName().equals("mExpobar")) {
+                String deviceName = device.getName();
+                if (deviceName.equals("mExpobar") || deviceName.equals("Roaster")) {
                     mmDevice = device;
                     break;
                 }
@@ -430,6 +432,7 @@ public class MainActivity extends Activity {
         }
 
         runOnUiThread(new Runnable() {
+
             @Override
             public void run() {
                 pressureTextBox.setText(String.valueOf(pressure));
@@ -437,42 +440,39 @@ public class MainActivity extends Activity {
                 tempTextBox.setText(String.valueOf(temp));
 
                 if (motorSetting != 0) {
-                    long millis = SystemClock.uptimeMillis() - (long) mStartTime;
+                    long millis = SystemClock.uptimeMillis() - mStartTime;
                     float seconds = (millis / (float) 1000);
-                    shotTimerTextBox.setText(String.valueOf(seconds));
+                    shotTimerTextBox.setText(String.format("%.1f", seconds));
+                }
+                else {
+                    //reset the start time
+                    mStartTime = SystemClock.uptimeMillis();
+
                 }
             }
         });
 
+        if (motorSetting != 0) {
 
-        if (item_count % 3 == 0) {
-
-            if (motorSetting == 0) {
-                mStartTime = System.currentTimeMillis();
-
-                while(series_Pressure.size() > 0) {
-                    series_Pressure.removeLast();
-                    series_RPM.removeLast();
-                    series_Temperature.removeLast();
-                }
-            }
-            else {
-
+            if (item_count % 3 == 0) {
                 series_Pressure.addLast(null, pressure);
                 series_RPM.addLast(null, motorSetting);
                 series_Temperature.addLast(null, temp);
-
-                if (series_Pressure.size() > max_samples_to_plot) {
-                    series_Pressure.removeFirst();
-                    series_RPM.removeFirst();
-                    series_Temperature.removeFirst();
-                }
 
                 pressure_plot.redraw();
                 rpm_plot.redraw();
                 temperature_plot.redraw();
             }
         }
+        else {
+            //clear out the plot
+            while(series_Pressure.size() > 0) {
+                series_Pressure.removeLast();
+                series_RPM.removeLast();
+                series_Temperature.removeLast();
+            }
+        }
+
 
     }
 
