@@ -53,6 +53,7 @@ public class MainActivity extends Activity {
     int counter;
     volatile boolean stopWorker;
 
+    private XYPlot time_plot;
     private XYPlot pressure_plot;
     private XYPlot rpm_plot;
     private XYPlot temperature_plot;
@@ -71,7 +72,6 @@ public class MainActivity extends Activity {
     private int current_motor;
     private float current_temperature;
 
-    private static int DAC_bit_max = 4095; // max for 12bit DAC = 2^12 - 1
     private static int max_samples_to_plot = 200;
     private static int label_frequency = 10;
     private static int domain_boundary_upper = 200;
@@ -91,19 +91,18 @@ public class MainActivity extends Activity {
         //plot_dummy_data();
     }
 
+    void clear_domain_map() {
+        for (int i = 0; i < domain_boundary_upper - 1; i++) {
+            domainMap[i] = "";
+        }
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         domainMap = new String[domain_boundary_upper];
-
-        for (int i = 0; i < domain_boundary_upper - 1; i++) {
-            domainMap[i] = "";
-        }
-
-        for (int i = 0; i < 100; i++) {
-            domainMap[i] = "test";
-        }
+        clear_domain_map();
 
         // remove title
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -163,6 +162,7 @@ public class MainActivity extends Activity {
         shotTimerTextBox = (TextView) findViewById(R.id.shotTimerText);
 
         // initialize our XYPlot references
+        time_plot = (XYPlot) findViewById(R.id.xyplot_time);
         pressure_plot = (XYPlot) findViewById(R.id.xyplot_pressure);
         rpm_plot = (XYPlot) findViewById(R.id.xyplot_rpm);
         temperature_plot = (XYPlot) findViewById(R.id.xyplot_temperature);
@@ -189,7 +189,6 @@ public class MainActivity extends Activity {
             }
         });
 
-
         LineAndPointFormatter pressureLinePointFormatter = new LineAndPointFormatter();
         pressureLinePointFormatter.setPointLabelFormatter(new PointLabelFormatter());
         pressureLinePointFormatter.configure(getApplicationContext(),
@@ -214,22 +213,14 @@ public class MainActivity extends Activity {
             }
         });
 
-        series_RPM.useImplicitXVals();
-        rpm_plot.addSeries(series_RPM, motorLinePointFormatter);
-        //rpm_plot.setTicksPerRangeLabel(1);
-        //rpm_plot.setTicksPerDomainLabel(1);
-        XYGraphWidget rpmWidget = rpm_plot.getGraphWidget();
-        rpmWidget.setDomainLabelOrientation(-45);
 
-        resetRPMPlotDomain();
-        rpm_plot.getGraphWidget().setDomainLabelOrientation(-45);
-        rpm_plot.setDomainValueFormat(new DecimalFormat("#"));
-        rpm_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
-        rpm_plot.setRangeValueFormat(new DecimalFormat("#"));
-        rpm_plot.setRangeBoundaries(0, 1200, BoundaryMode.FIXED);
-        rpm_plot.getLegendWidget().setVisible(false);
-
-        rpm_plot.setDomainValueFormat(new NumberFormat() {
+        //time plot is the base layer plot
+        XYGraphWidget timeWidget = time_plot.getGraphWidget();
+        timeWidget.setDomainLabelOrientation(-45);
+        time_plot.setDomainValueFormat(new DecimalFormat("#"));
+        time_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
+        time_plot.getLegendWidget().setVisible(false);
+        time_plot.setDomainValueFormat(new NumberFormat() {
 
             @Override
             public StringBuffer format(double d, StringBuffer sb, FieldPosition fp) {
@@ -245,11 +236,6 @@ public class MainActivity extends Activity {
             public Number parse(String s, ParsePosition parsePosition) { return null;}
         });
 
-        //RPM is the base layer plot so we don't set everything to alpha 0 like the others
-        rpmWidget.getRangeLabelPaint().setColor(getResources().getColor(R.color.motor_line_color));
-        rpm_plot.getRangeLabelWidget().setVisible(false); //remove the bar label
-        rpmWidget.getRangeOriginLabelPaint().setAlpha(0);
-
         Paint graphFill = new Paint();
         graphFill.setAlpha(200);
         LinearGradient lg = new LinearGradient(0, 0, 0, 250,
@@ -257,55 +243,47 @@ public class MainActivity extends Activity {
                 getResources().getColor(R.color.back_gradient_1),
                 Shader.TileMode.MIRROR);
         graphFill.setShader(lg);
+        timeWidget.getGridBackgroundPaint().set(graphFill);
 
-        rpmWidget.getGridBackgroundPaint().set(graphFill);
+        series_RPM.useImplicitXVals();
+        set_plot_transparent(rpm_plot);
+        rpm_plot.addSeries(series_RPM, motorLinePointFormatter);
+        rpm_plot.setDomainValueFormat(new DecimalFormat("#"));
+        rpm_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
+        rpm_plot.setRangeValueFormat(new DecimalFormat("#"));
+        rpm_plot.setRangeBoundaries(0, 1200, BoundaryMode.FIXED);
 
         series_Pressure.useImplicitXVals();
+        set_plot_transparent(pressure_plot);
         pressure_plot.addSeries(series_Pressure, pressureLinePointFormatter);
-        XYGraphWidget pressureWidget = pressure_plot.getGraphWidget();
         pressure_plot.setDomainValueFormat(new DecimalFormat("#"));
         pressure_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         pressure_plot.setRangeValueFormat(new DecimalFormat("#"));
         pressure_plot.setRangeBoundaries(1, 15, BoundaryMode.FIXED);
-        pressure_plot.getLegendWidget().setVisible(false);
-
-        //set transparency values
-        pressure_plot.getBorderPaint().setAlpha(0);
-        pressure_plot.getBackgroundPaint().setAlpha(0);
-        pressureWidget.getBackgroundPaint().setAlpha(0);
-        pressureWidget.getDomainLabelPaint().setAlpha(0);
-        pressureWidget.getRangeLabelPaint().setColor(getResources().getColor(R.color.pressure_line_color));
-        pressure_plot.getRangeLabelWidget().setVisible(false); //remove the bar label
-        pressureWidget.getGridBackgroundPaint().setAlpha(0);
-        pressureWidget.getDomainOriginLinePaint().setAlpha(0);
-        pressureWidget.getRangeOriginLabelPaint().setAlpha(0);
-        pressureWidget.getDomainGridLinePaint().setAlpha(0);
 
         series_Temperature.useImplicitXVals();
         temperature_plot.addSeries(series_Temperature, tempLinePointFormatter);
-        XYGraphWidget tempWidget = temperature_plot.getGraphWidget();
-        tempWidget.setDomainLabelOrientation(-45);
+        set_plot_transparent(temperature_plot);
         temperature_plot.setDomainValueFormat(new DecimalFormat("#"));
         temperature_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         temperature_plot.setRangeValueFormat(new DecimalFormat("#"));
         temperature_plot.setRangeBoundaries(160, 220, BoundaryMode.FIXED);
-        temperature_plot.getLegendWidget().setVisible(false);
 
-        //set transparency values
-        temperature_plot.getBorderPaint().setAlpha(0);
-        temperature_plot.getBackgroundPaint().setAlpha(0);
-        tempWidget.getBackgroundPaint().setAlpha(0);
-        tempWidget.getDomainLabelPaint().setAlpha(0);
-        tempWidget.getRangeLabelPaint().setColor(getResources().getColor(R.color.temperature_line_color));
-        temperature_plot.getRangeLabelWidget().setVisible(false); //remove the Fahrenheit label
-        tempWidget.getGridBackgroundPaint().setAlpha(0);
-        tempWidget.getDomainOriginLinePaint().setAlpha(0);
-        tempWidget.getRangeOriginLabelPaint().setAlpha(0);
-        tempWidget.getDomainGridLinePaint().setAlpha(0);
+    }
 
-        rpmWidget.getRangeLabelPaint().setAlpha(0);
-        pressureWidget.getRangeLabelPaint().setAlpha(0);
-        tempWidget.getRangeLabelPaint().setAlpha(0);
+    void set_plot_transparent(XYPlot plot){
+
+        plot.getLegendWidget().setVisible(false);
+        plot.getBorderPaint().setAlpha(0);
+        plot.getBackgroundPaint().setAlpha(0);
+        plot.getGraphWidget().getBackgroundPaint().setAlpha(0);
+        plot.getGraphWidget().getDomainLabelPaint().setAlpha(0);
+        plot.getRangeLabelWidget().setVisible(false); //remove the bar label
+        plot.getGraphWidget().getGridBackgroundPaint().setAlpha(0);
+        plot.getGraphWidget().getDomainOriginLinePaint().setAlpha(0);
+        plot.getGraphWidget().getRangeOriginLabelPaint().setAlpha(0);
+        plot.getGraphWidget().getDomainGridLinePaint().setAlpha(0);
+        plot.getGraphWidget().getRangeLabelPaint().setAlpha(0);
 
     }
 
@@ -449,8 +427,8 @@ public class MainActivity extends Activity {
 
                 pressure_plot.redraw();
                 temperature_plot.redraw();
-                resetRPMPlotDomain();
                 rpm_plot.redraw();
+                time_plot.redraw();
             }
         }
         else {
@@ -463,25 +441,6 @@ public class MainActivity extends Activity {
         }
 
 
-    }
-
-    void resetRPMPlotDomain() {
-        rpm_plot.setDomainValueFormat(new NumberFormat() {
-            @Override
-            public StringBuffer format(double value, StringBuffer buffer, FieldPosition field) {
-                return new StringBuffer(domainMap[(int) value]);
-            }
-
-            @Override
-            public StringBuffer format(long value, StringBuffer buffer, FieldPosition field) {
-                return null;
-            }
-
-            @Override
-            public Number parse(String string, ParsePosition position) {
-                return null;
-            }
-        });
     }
 
     void beginListenForData() {
