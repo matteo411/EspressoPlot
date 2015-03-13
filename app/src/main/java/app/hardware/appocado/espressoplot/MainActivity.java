@@ -83,6 +83,7 @@ public class MainActivity extends Activity {
     private static int domain_boundary_upper = 200;
 
     private long mStartTime = 0L;
+    private float mElapsedSeconds = 0;
 
     private Thread timer;
     private TextView shotTimerTextBox;
@@ -215,7 +216,7 @@ public class MainActivity extends Activity {
         rpmWidget.setDomainLabelOrientation(-45);
 
         //rpmWidget.setRangeLabelHorizontalOffset(-60);
-        rpm_plot.getGraphWidget().setDomainLabelOrientation(-45);
+        rpm_plot.getGraphWidget().setDomainLabelOrientation(-90);
         rpm_plot.setDomainValueFormat(new DecimalFormat("#"));
         rpm_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         rpm_plot.setRangeValueFormat(new DecimalFormat("#"));
@@ -245,10 +246,7 @@ public class MainActivity extends Activity {
 
         series_Pressure.useImplicitXVals();
         pressure_plot.addSeries(series_Pressure, pressureLinePointFormatter);
-        //pressure_plot.setTicksPerRangeLabel(20);
-        //pressure_plot.setTicksPerDomainLabel(2);
         XYGraphWidget pressureWidget = pressure_plot.getGraphWidget();
-        pressureWidget.setDomainLabelOrientation(-45);
         pressure_plot.setDomainValueFormat(new DecimalFormat("#"));
         pressure_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         pressure_plot.setRangeValueFormat(new DecimalFormat("#"));
@@ -269,14 +267,12 @@ public class MainActivity extends Activity {
 
         series_Temperature.useImplicitXVals();
         temperature_plot.addSeries(series_Temperature, tempLinePointFormatter);
-        //temperature_plot.setTicksPerRangeLabel(1);
-        //temperature_plot.setTicksPerDomainLabel(1);
         XYGraphWidget tempWidget = temperature_plot.getGraphWidget();
         tempWidget.setDomainLabelOrientation(-45);
         temperature_plot.setDomainValueFormat(new DecimalFormat("#"));
         temperature_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         temperature_plot.setRangeValueFormat(new DecimalFormat("#"));
-        temperature_plot.setRangeBoundaries(160, 240, BoundaryMode.FIXED);
+        temperature_plot.setRangeBoundaries(160, 220, BoundaryMode.FIXED);
         temperature_plot.getLegendWidget().setVisible(false);
 
         //set transparency values
@@ -291,34 +287,9 @@ public class MainActivity extends Activity {
         tempWidget.getRangeOriginLabelPaint().setAlpha(0);
         tempWidget.getDomainGridLinePaint().setAlpha(0);
 
-        //temperature_plot.getRangeLabelWidget().setVisible(false);
-        //rpm_plot.getRangeLabelWidget().setVisible(false);
-        //pressure_plot.getRangeLabelWidget().setVisible(false);
-
         rpmWidget.getRangeLabelPaint().setAlpha(0);
         pressureWidget.getRangeLabelPaint().setAlpha(0);
         tempWidget.getRangeLabelPaint().setAlpha(0);
-        //AXIS positionings
-        //rpmWidget.setRangeAxisPosition(false, false, 10, "10");
-        //rpmWidget.setRangeLabelHorizontalOffset(80);
-        //rpmWidget.setRangeLabelVerticalOffset(10);
-
-        //pressureWidget.setRangeLabelHorizontalOffset(50);
-        //pressureWidget.setRangeLabelVerticalOffset(10);
-
-        //tempWidget.setRangeLabelHorizontalOffset(-40);
-        //tempWidget.setRangeLabelVerticalOffset(10);
-
-        int rightMargin = 90;
-
-        //rpmWidget.setMarginRight(rightMargin);
-        //tempWidget.setMarginRight(rightMargin);
-        //pressureWidget.setMarginRight(rightMargin);
-
-        //set offset
-        //tempWidget.setRangeAxisPosition(false,false,0,"0");
-
-        //tempWidget.setRangeLabelVerticalOffset(-5);
 
     }
 
@@ -441,8 +412,8 @@ public class MainActivity extends Activity {
 
                 if (motorSetting != 0) {
                     long millis = SystemClock.uptimeMillis() - mStartTime;
-                    float seconds = (millis / (float) 1000);
-                    shotTimerTextBox.setText(String.format("%.1f", seconds));
+                    mElapsedSeconds = (millis / (float) 1000);
+                    shotTimerTextBox.setText(String.format("%.1f", mElapsedSeconds));
                 }
                 else {
                     //reset the start time
@@ -458,6 +429,8 @@ public class MainActivity extends Activity {
                 series_Pressure.addLast(null, pressure);
                 series_RPM.addLast(null, motorSetting);
                 series_Temperature.addLast(null, temp);
+
+
 
                 pressure_plot.redraw();
                 rpm_plot.redraw();
