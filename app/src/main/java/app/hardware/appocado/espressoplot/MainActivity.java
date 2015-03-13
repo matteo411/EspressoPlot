@@ -7,29 +7,20 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
-import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.RectF;
 import android.graphics.Shader;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.androidplot.util.Redrawer;
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
-import com.androidplot.xy.LineAndPointRenderer;
 import com.androidplot.xy.PointLabelFormatter;
 import com.androidplot.xy.PointLabeler;
 import com.androidplot.xy.SimpleXYSeries;
@@ -42,6 +33,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
+import java.text.FieldPosition;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.Set;
 import java.util.UUID;
 
@@ -88,6 +82,8 @@ public class MainActivity extends Activity {
     private Thread timer;
     private TextView shotTimerTextBox;
 
+    private static String domainMap[];
+
     @Override
     public void onStart() {
         super.onStart();
@@ -98,6 +94,16 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        domainMap = new String[domain_boundary_upper];
+
+        for (int i = 0; i < domain_boundary_upper - 1; i++) {
+            domainMap[i] = "";
+        }
+
+        for (int i = 0; i < 100; i++) {
+            domainMap[i] = "test";
+        }
 
         // remove title
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -215,24 +221,34 @@ public class MainActivity extends Activity {
         XYGraphWidget rpmWidget = rpm_plot.getGraphWidget();
         rpmWidget.setDomainLabelOrientation(-45);
 
-        //rpmWidget.setRangeLabelHorizontalOffset(-60);
-        rpm_plot.getGraphWidget().setDomainLabelOrientation(-90);
+        resetRPMPlotDomain();
+        rpm_plot.getGraphWidget().setDomainLabelOrientation(-45);
         rpm_plot.setDomainValueFormat(new DecimalFormat("#"));
         rpm_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         rpm_plot.setRangeValueFormat(new DecimalFormat("#"));
         rpm_plot.setRangeBoundaries(0, 1200, BoundaryMode.FIXED);
         rpm_plot.getLegendWidget().setVisible(false);
 
+        rpm_plot.setDomainValueFormat(new NumberFormat() {
+
+            @Override
+            public StringBuffer format(double d, StringBuffer sb, FieldPosition fp) {
+                return sb.append(domainMap[(int)d]);
+            }
+
+            // unused
+            @Override
+            public StringBuffer format(long l, StringBuffer stringBuffer, FieldPosition fieldPosition) { return null;}
+
+            // unused
+            @Override
+            public Number parse(String s, ParsePosition parsePosition) { return null;}
+        });
+
         //RPM is the base layer plot so we don't set everything to alpha 0 like the others
-        //rpmWidget.getBackgroundPaint().setAlpha(0);
-        //rpmWidget.getDomainLabelPaint().setAlpha(0);
         rpmWidget.getRangeLabelPaint().setColor(getResources().getColor(R.color.motor_line_color));
         rpm_plot.getRangeLabelWidget().setVisible(false); //remove the bar label
-
-        //rpmWidget.getGridBackgroundPaint().setAlpha(0);
-        //rpmWidget.getDomainOriginLinePaint().setAlpha(0);
         rpmWidget.getRangeOriginLabelPaint().setAlpha(0);
-        //rpmWidget.getDomainGridLinePaint().setAlpha(0);
 
         Paint graphFill = new Paint();
         graphFill.setAlpha(200);
@@ -424,17 +440,17 @@ public class MainActivity extends Activity {
         });
 
         if (motorSetting != 0) {
-
             if (item_count % 3 == 0) {
                 series_Pressure.addLast(null, pressure);
                 series_RPM.addLast(null, motorSetting);
                 series_Temperature.addLast(null, temp);
 
-
+                domainMap[series_RPM.size() - 1] = String.format("%.1f", mElapsedSeconds);
 
                 pressure_plot.redraw();
-                rpm_plot.redraw();
                 temperature_plot.redraw();
+                resetRPMPlotDomain();
+                rpm_plot.redraw();
             }
         }
         else {
@@ -447,6 +463,25 @@ public class MainActivity extends Activity {
         }
 
 
+    }
+
+    void resetRPMPlotDomain() {
+        rpm_plot.setDomainValueFormat(new NumberFormat() {
+            @Override
+            public StringBuffer format(double value, StringBuffer buffer, FieldPosition field) {
+                return new StringBuffer(domainMap[(int) value]);
+            }
+
+            @Override
+            public StringBuffer format(long value, StringBuffer buffer, FieldPosition field) {
+                return null;
+            }
+
+            @Override
+            public Number parse(String string, ParsePosition position) {
+                return null;
+            }
+        });
     }
 
     void beginListenForData() {
