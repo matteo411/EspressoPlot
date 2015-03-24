@@ -259,7 +259,7 @@ public class MainActivity extends Activity {
         pressure_plot.setDomainValueFormat(new DecimalFormat("#"));
         pressure_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         pressure_plot.setRangeValueFormat(new DecimalFormat("#"));
-        pressure_plot.setRangeBoundaries(1, 15, BoundaryMode.FIXED);
+        pressure_plot.setRangeBoundaries(1, 17, BoundaryMode.FIXED);
 
         series_Temperature.useImplicitXVals();
         temperature_plot.addSeries(series_Temperature, tempLinePointFormatter);
