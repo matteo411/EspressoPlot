@@ -3,5 +3,5 @@
         linePaint.strokeWidth="3dp"
         linePaint.color="@color/pressure_line_color"
         vertexPaint.color="#00000000"
-        fillPaint.color="#00000000"
+        fillPaint.color="@color/pressure_line_color_fill"
         pointLabelFormatter.textPaint.color="#ffffffff"/>

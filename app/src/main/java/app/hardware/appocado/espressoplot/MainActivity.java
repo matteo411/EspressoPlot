@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
@@ -100,6 +101,8 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Resources res = getResources();
 
         domainMap = new String[domain_boundary_upper];
         clear_domain_map();
@@ -236,13 +239,16 @@ public class MainActivity extends Activity {
             public Number parse(String s, ParsePosition parsePosition) { return null;}
         });
 
+
         Paint graphFill = new Paint();
         graphFill.setAlpha(200);
+
         LinearGradient lg = new LinearGradient(0, 0, 0, 250,
                 getResources().getColor(R.color.back_gradient_2),
                 getResources().getColor(R.color.back_gradient_1),
                 Shader.TileMode.MIRROR);
         graphFill.setShader(lg);
+
         timeWidget.getGridBackgroundPaint().set(graphFill);
 
         series_RPM.useImplicitXVals();
@@ -251,7 +257,7 @@ public class MainActivity extends Activity {
         rpm_plot.setDomainValueFormat(new DecimalFormat("#"));
         rpm_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         rpm_plot.setRangeValueFormat(new DecimalFormat("#"));
-        rpm_plot.setRangeBoundaries(0, 1200, BoundaryMode.FIXED);
+        rpm_plot.setRangeBoundaries(res.getInteger(R.integer.motor_range_min),res.getInteger(R.integer.motor_range_max), BoundaryMode.FIXED);
 
         series_Pressure.useImplicitXVals();
         set_plot_transparent(pressure_plot);
@@ -259,7 +265,7 @@ public class MainActivity extends Activity {
         pressure_plot.setDomainValueFormat(new DecimalFormat("#"));
         pressure_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         pressure_plot.setRangeValueFormat(new DecimalFormat("#"));
-        pressure_plot.setRangeBoundaries(1, 17, BoundaryMode.FIXED);
+        pressure_plot.setRangeBoundaries(res.getInteger(R.integer.pressure_range_min),res.getInteger(R.integer.pressure_range_max), BoundaryMode.FIXED);
 
         series_Temperature.useImplicitXVals();
         temperature_plot.addSeries(series_Temperature, tempLinePointFormatter);
@@ -267,7 +273,7 @@ public class MainActivity extends Activity {
         temperature_plot.setDomainValueFormat(new DecimalFormat("#"));
         temperature_plot.setDomainBoundaries(1, domain_boundary_upper, BoundaryMode.FIXED);
         temperature_plot.setRangeValueFormat(new DecimalFormat("#"));
-        temperature_plot.setRangeBoundaries(160, 220, BoundaryMode.FIXED);
+        temperature_plot.setRangeBoundaries(res.getInteger(R.integer.temp_range_min), res.getInteger(R.integer.temp_range_max), BoundaryMode.FIXED);
 
     }
 

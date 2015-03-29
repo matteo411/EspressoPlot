@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="motor_range_min">0</integer>
+    <integer name="motor_range_max">1200</integer>
+    <integer name="pressure_range_min">1</integer>
+    <integer name="pressure_range_max">17</integer>
+    <integer name="temp_range_min">180</integer>
+    <integer name="temp_range_max">240</integer>
+</resources>
